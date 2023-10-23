@@ -1,0 +1,12 @@
+attrs==23.1.0
+cloudpickle==3.0.0
+decorator==5.1.1
+numpy==1.26.0
+onnx==1.14.1
+Pillow==10.0.1
+protobuf==4.24.4
+psutil==5.9.5
+scipy==1.11.3
+tornado==6.3.3
+pytest==7.4.2
+typing_extensions==4.8.0
