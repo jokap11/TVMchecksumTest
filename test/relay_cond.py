@@ -11,6 +11,8 @@ def example():
     weight = relay.var("weight", shape=(64, 64, 3, 3),dtype="int8")
     x = relay.var("x", relay.TensorType((1, 64, 56, 56), "int8"))
     conv = relay.nn.conv2d(x, weight)
+    weight2 = relay.multiply(weight, relay.const(5, "uint8"))
+    conv2 = relay.nn.conv2d(x, weight2)
     y = relay.add(c, c)
     y = relay.multiply(y, relay.const(2, "int8"))
     y = relay.add(conv, y)
@@ -18,8 +20,8 @@ def example():
     z1 = relay.add(y, c)
     z2 = relay.add(z, z1)
     z2 = relay.exp(z2)
-    #mult_out = relay.Tuple([z2, conv])
-    return relay.Function([x, weight], z2)
+    mult_out = relay.Tuple([z2, conv, conv2])
+    return relay.Function([x, weight], mult_out)
 
 ###############################################################################
 # Optimize the Program
@@ -41,7 +43,7 @@ mod = tvm.IRModule.from_expr(f)
 
 # Now we can apply constant folding on the module.
 # fold_const here is a callback that doesn't take any parameters.
-fastMath = relay.transform.ToANormalForm()
+fastMath = relay.transform.Extend2DConv()
 # Then, we can invoke the pass on the given module. Note that the constant
 # folding pass works at the function-level. That being said, each function in
 # the module will be applied with the optimization. Users don't need to iterate
