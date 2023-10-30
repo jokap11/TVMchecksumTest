@@ -8,4 +8,5 @@ source venv/bin/activate;
 pip install -r requirements.txt;
 fi
 
-python3 test/relay_example.py
+# Debug just works with VLOG informations unfortunately
+TVM_LOG_DEBUG=DEFAULT=2 python3 test/relay_cond.py 

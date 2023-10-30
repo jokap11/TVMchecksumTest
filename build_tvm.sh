@@ -4,5 +4,5 @@
 mkdir tvm/build;
 cp config.cmake tvm/build/config.cmake;
 cd tvm/build;
-cmake ..;
+cmake -DCMAKE_BUILD_TYPE=Debug ..;
 make -j8;
