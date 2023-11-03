@@ -41,6 +41,8 @@ f = example()
 mod = tvm.IRModule.from_expr(f)
 #print(mod)
 
+inferType = relay.transform.InferType()
+mod = inferType(mod)
 # Now we can apply constant folding on the module.
 # fold_const here is a callback that doesn't take any parameters.
 fastMath = relay.transform.Extend2DConv()
