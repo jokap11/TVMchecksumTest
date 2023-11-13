@@ -9,4 +9,7 @@ pip3 install -r requirements.txt;
 fi
 
 # Debug just works with VLOG informations unfortunately
-TVM_LOG_DEBUG=DEFAULT=2 python3 test/relay_cond.py 
+#TVM_LOG_DEBUG=DEFAULT=2 python3 test/relay_cond.py
+#Run real units test:
+cd tvm/tests/python/relay;
+pytest test_pass_conv2d_checksum_extension.py
