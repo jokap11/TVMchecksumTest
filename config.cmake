@@ -313,7 +313,7 @@ set(USE_ANTLR OFF)
 set(USE_RELAY_DEBUG ON)
 
 # Whether to build fast VTA simulator driver
-set(USE_VTA_FSIM OFF)
+set(USE_VTA_FSIM ON)
 
 # Whether to build cycle-accurate VTA simulator driver
 set(USE_VTA_TSIM OFF)
