@@ -12,11 +12,11 @@
 ## Run the bash script to build tvm for llvm
  - ./scripts/build_tvm.sh
  - Get 2 environmental vars into your .bashrc file:
-    export TVM_HOME=/path/to/tvm
-    For solely standard TVM
-    export PYTHONPATH=$TVM_HOME/python:${PYTHONPATH}
-    Extend path for VTA:
-    export PYTHONPATH=/path/to/vta/python:${PYTHONPATH}
+    `export TVM_HOME=/path/to/tvm`
+ - For solely standard TVM usage:
+    `export PYTHONPATH=$TVM_HOME/python:${PYTHONPATH}`
+ - Extend path for VTA:
+    `export PYTHONPATH=/path/to/vta/python:${PYTHONPATH}`
     
 ## Use this python script for testing the checksum extension unit test pass
  - ./scripts/pass_test.sh
