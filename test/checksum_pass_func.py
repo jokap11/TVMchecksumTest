@@ -19,7 +19,8 @@
 import numpy as np
 import tvm
 import tvm.relay as relay
-
+from tvm.contrib import graph_executor
+from tvm.topi.testing import strided_slice_python, conv2d_nchw_python
 
 def easy_2conv_example():
     w1 = relay.var("w1", shape=(1, 64, 3, 3), dtype="int8")
@@ -98,6 +99,70 @@ def qnn_2conv():
     return relay.Function([x,weight,weight2], result)
 
 
+def strided_slice_example():
+    x  = relay.var("data", shape=( 12, 12), dtype="int8")
+    conv = relay.strided_slice(x, begin=[ 1, 1], end=[ 7, 7], strides=[1, 1], axes=[1,0],slice_mode="end")
+    return relay.Function([x], conv)
+
+
+def evaluate():
+    #c_data = np.zeros(shape=(1, 64, 3, 3)).astype("int8")
+    input_shape = (1 ,2, 6, 6)
+    weight_shape = (1,2,4,4)
+    #np.random.seed(seed=0)
+    data = np.random.randint(-128,127,input_shape, dtype="int8")
+    w1 = np.random.randint(-128,127,weight_shape, dtype="int8")
+
+    print(data)
+    conv = conv2d_nchw_python(data.astype("int32"),w1.astype("int32"),(2,2), 0)
+
+
+    #weight size
+    c = 2
+    w = 4
+    #striding
+    s = 2
+
+    # position in weight
+    # pos_c = 0
+    # pos_y = 0
+    # pos_x = 1
+    res = []
+
+    #print(c_data[0])
+    #print(c_data[1])
+    print(f" Das ist das weight{w1}")
+    # minimize batch size with summation
+    b_data = data[0]
+    
+    for pos_c in range(c):
+        layer = []
+        for pos_y in range(w):
+            for pos_x in range(w):
+                slice = strided_slice_python(b_data[pos_c], begin=[pos_y, pos_x], end=[int(input_shape[2]-(w-pos_y)+1), int(input_shape[3]-(w-pos_x)+1)], strides=[s,s], axes=[0,1] ,slice_mode="end")
+                #print(f"New Tensor: with c/x/y {pos_c}/{pos_x}/{pos_y}")
+                #print(slice)
+                slice = np.sum(slice)
+                #print(slice)
+                layer.append(slice)
+        #print(layer)
+        res.append(layer)
+    input_checksum = np.reshape(res, (1,2,4,4))
+    print(f"Input checksum {input_checksum}")
+    tensor_dot =  conv2d_nchw_python(input_checksum.astype("int32"), w1.astype("int32"), (1,1), 0)
+    #print(res)
+    print(f"Das ist die COnv {conv}")
+    print(f"Das ist das tensor dot {tensor_dot}")
+    elem_wise = np.sum(conv)
+    tensor_1dim = np.sum(tensor_dot)
+    print(f"output checksum vs tensor tensor dot {elem_wise} == {tensor_1dim}")
+    return res
+
+
+
+result = evaluate()
+#print("New Tensor:")
+#print(result)
 
 f = qnn_2conv()
 mod = tvm.IRModule.from_expr(f)
