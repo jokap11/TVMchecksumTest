@@ -1,0 +1,98 @@
+Print relay modulse:
+def @main(%data: Tensor[(1, 32, 32, 3), int8] /* ty=Tensor[(1, 32, 32, 3), int8] */, %data2: Tensor[(1, 32, 32, 3), int8] /* ty=Tensor[(1, 32, 32, 3), int8] */) -> Tensor[(1, 32, 32, 16), int32] {
+  %0 = nn.pad(%data, -128 /* ty=int32 */, pad_width=[[0, 0], [1, 1], [1, 1], [0, 0]]) /* ty=Tensor[(1, 34, 34, 3), int8] */;
+  %1 = ones(shape=[3, 3, 3, 16], dtype="int8") /* ty=Tensor[(3, 3, 3, 16), int8] */;
+  %2 = nn.conv2d(%0, %1, padding=[0, 0, 0, 0], channels=16, kernel_size=[3, 3], data_layout="NHWC", kernel_layout="HWIO", out_dtype="int32") /* ty=Tensor[(1, 32, 32, 16), int32] */;
+  %3 = ones(shape=[1, 32, 32, 16], dtype="int32") /* ty=Tensor[(1, 32, 32, 16), int32] */;
+  %4 = subtract(%2, %3) /* ty=Tensor[(1, 32, 32, 16), int32] */;
+  %5 = ones(shape=[16], dtype="int32") /* ty=Tensor[(16), int32] */;
+  %6 = abs(%data2) /* ty=Tensor[(1, 32, 32, 3), int8] */;
+  %7 = nn.pad(%6, -128 /* ty=int32 */, pad_width=[[0, 0], [1, 1], [1, 1], [0, 0]]) /* ty=Tensor[(1, 34, 34, 3), int8] */;
+  %8 = nn.conv2d(%7, %1, padding=[0, 0, 0, 0], channels=16, kernel_size=[3, 3], data_layout="NHWC", kernel_layout="HWIO", out_dtype="int32") /* ty=Tensor[(1, 32, 32, 16), int32] */;
+  %9 = subtract(%8, %3) /* ty=Tensor[(1, 32, 32, 16), int32] */;
+  %10 = nn.bias_add(%4, %5, axis=3) /* ty=Tensor[(1, 32, 32, 16), int32] */;
+  %11 = nn.bias_add(%9, %5, axis=3) /* ty=Tensor[(1, 32, 32, 16), int32] */;
+  %12 = add(%10, %11) /* ty=Tensor[(1, 32, 32, 16), int32] */;
+  clip(%12, a_min=-128f, a_max=127f) /* ty=Tensor[(1, 32, 32, 16), int32] */
+}
+
+    
+    @R.function
+    def main(data: R.Tensor((1, 32, 32, 3), dtype="int8"), data2: R.Tensor((1, 32, 32, 3), dtype="int8")) -> R.Tensor((1, 32, 32, 16), dtype="int32"):
+        cls = Module
+        with R.dataflow():
+            lv = R.call_tir(cls.pad, (data, R.const(-128, "int32")), out_sinfo=R.Tensor((1, 34, 34, 3), dtype="int8"))
+            lv1 = R.call_tir(cls.ones, R.tuple(), out_sinfo=R.Tensor((3, 3, 3, 16), dtype="int8"))
+            lv2 = R.call_tir(cls.conv2d, (lv, lv1), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv3 = R.call_tir(cls.ones1, R.tuple(), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv4 = R.call_tir(cls.subtract, (lv2, lv3), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv5 = R.call_tir(cls.ones2, R.tuple(), out_sinfo=R.Tensor((16,), dtype="int32"))
+            lv6 = R.call_tir(cls.expand_dims, (lv5,), out_sinfo=R.Tensor((1, 1, 1, 16), dtype="int32"))
+            lv7 = R.call_tir(cls.add, (lv4, lv6), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv8 = R.call_tir(cls.abs, (data2,), out_sinfo=R.Tensor((1, 32, 32, 3), dtype="int8"))
+            lv9 = R.call_tir(cls.pad, (lv8, R.const(-128, "int32")), out_sinfo=R.Tensor((1, 34, 34, 3), dtype="int8"))
+            lv10 = R.call_tir(cls.conv2d, (lv9, lv1), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv11 = R.call_tir(cls.subtract, (lv10, lv3), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv12 = R.call_tir(cls.add, (lv11, lv6), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv13 = R.call_tir(cls.add1, (lv7, lv12), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv14 = R.call_tir(cls.clip, (lv13,), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            gv: R.Tensor((1, 32, 32, 16), dtype="int32") = lv14
+            R.output(gv)
+        return gv
+
+DFS:
+    @R.function
+    def main(data: R.Tensor((1, 32, 32, 3), dtype="int8"), data2: R.Tensor((1, 32, 32, 3), dtype="int8")) -> R.Tensor((1, 32, 32, 16), dtype="int32"):
+        cls = Module
+        with R.dataflow():
+            lv = R.call_tir(cls.pad, (data, R.const(-128, "int32")), out_sinfo=R.Tensor((1, 34, 34, 3), dtype="int8"))
+            lv8 = R.call_tir(cls.abs, (data2,), out_sinfo=R.Tensor((1, 32, 32, 3), dtype="int8"))
+            lv9 = R.call_tir(cls.pad, (lv8, R.const(-128, "int32")), out_sinfo=R.Tensor((1, 34, 34, 3), dtype="int8"))
+            lv1 = R.call_tir(cls.ones, R.tuple(), out_sinfo=R.Tensor((3, 3, 3, 16), dtype="int8"))
+            lv2 = R.call_tir(cls.conv2d, (lv, lv1), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv10 = R.call_tir(cls.conv2d, (lv9, lv1), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv3 = R.call_tir(cls.ones1, R.tuple(), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv4 = R.call_tir(cls.subtract, (lv2, lv3), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv11 = R.call_tir(cls.subtract, (lv10, lv3), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv5 = R.call_tir(cls.ones2, R.tuple(), out_sinfo=R.Tensor((16,), dtype="int32"))
+            lv6 = R.call_tir(cls.expand_dims, (lv5,), out_sinfo=R.Tensor((1, 1, 1, 16), dtype="int32"))
+            lv7 = R.call_tir(cls.add, (lv4, lv6), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv12 = R.call_tir(cls.add, (lv11, lv6), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv13 = R.call_tir(cls.add1, (lv7, lv12), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv14 = R.call_tir(cls.clip, (lv13,), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            gv: R.Tensor((1, 32, 32, 16), dtype="int32") = lv14
+            R.output(gv)
+        return gv
+
+
+BFS:
+    @R.function
+    def main(data: R.Tensor((1, 32, 32, 3), dtype="int8"), data2: R.Tensor((1, 32, 32, 3), dtype="int8")) -> R.Tensor((1, 32, 32, 16), dtype="int32"):
+        cls = Module
+        with R.dataflow():
+            VAR
+            lv1 = R.call_tir(cls.ones, R.tuple(), out_sinfo=R.Tensor((3, 3, 3, 16), dtype="int8"))
+            lv3 = R.call_tir(cls.ones1, R.tuple(), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv5 = R.call_tir(cls.ones2, R.tuple(), out_sinfo=R.Tensor((16,), dtype="int32"))
+            1st Level          
+            lv = R.call_tir(cls.pad, (data, R.const(-128, "int32")), out_sinfo=R.Tensor((1, 34, 34, 3), dtype="int8"))
+            lv8 = R.call_tir(cls.abs, (data2,), out_sinfo=R.Tensor((1, 32, 32, 3), dtype="int8"))
+            lv6 = R.call_tir(cls.expand_dims, (lv5,), out_sinfo=R.Tensor((1, 1, 1, 16), dtype="int32"))
+            2nd Level
+            lv2 = R.call_tir(cls.conv2d, (lv, lv1), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv9 = R.call_tir(cls.pad, (lv8, R.const(-128, "int32")), out_sinfo=R.Tensor((1, 34, 34, 3), dtype="int8"))
+            3rd Level
+            lv4 = R.call_tir(cls.subtract, (lv2, lv3), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv10 = R.call_tir(cls.conv2d, (lv9, lv1), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            4th Level
+            lv7 = R.call_tir(cls.add, (lv4, lv6), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            lv11 = R.call_tir(cls.subtract, (lv10, lv3), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            5th Level:
+            lv12 = R.call_tir(cls.add, (lv11, lv6), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            6th Level:
+            lv13 = R.call_tir(cls.add1, (lv7, lv12), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            7th Level:
+            lv14 = R.call_tir(cls.clip, (lv13,), out_sinfo=R.Tensor((1, 32, 32, 16), dtype="int32"))
+            gv: R.Tensor((1, 32, 32, 16), dtype="int32") = lv14
+            R.output(gv)
+        return gv

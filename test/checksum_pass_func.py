@@ -68,60 +68,69 @@ def complex_conv_in_deeper_tree_structure():
 def fork_structure():
 
     const0 = relay.ones(shape=(3, 3, 3, 16), dtype="int8")
-    const1 = relay.ones(shape=(1, 1, 1, 16), dtype="int32")
+    const1 = relay.ones(shape=(1, 32, 32, 16), dtype="int32")
     const2 = relay.ones(shape=(16), dtype="int32")
-    const6 = relay.ones(shape=(1), dtype="int32")
-    const7 = relay.ones(shape=(3, 3, 3, 16), dtype="int8")
-    const8 = relay.ones(shape=(1, 1, 1, 16), dtype="int32")
-    const9 = relay.ones(shape=(16), dtype="int32")
+    # const3 = relay.ones(shape=(1, 32, 32, 16), dtype="int32")
+    # const6 = relay.ones(shape=(1, 32, 32, 16), dtype="int32")
+    # const7 = relay.ones(shape=(3, 3, 3, 16), dtype="int8")
+    # const8 = relay.ones(shape=(1, 1, 1, 16), dtype="int32")
+    # const9 = relay.ones(shape=(16), dtype="int32")
 
-    const13 = relay.ones(shape=(3, 3, 3, 16), dtype="int8")
-    const14 = relay.ones(shape=(1, 1, 1, 16), dtype="int32")
-    const15 = relay.ones(shape=(16), dtype="int32")
-    const19 = relay.ones(shape=(1), dtype="int32")
-
+    # const13 = relay.ones(shape=(3, 3, 3, 16), dtype="int8")
+    # const14 = relay.ones(shape=(1, 1, 1, 16), dtype="int32")
+    # const15 = relay.ones(shape=(16, 1), dtype="int32")
+    # const19 = relay.ones(shape=(1), dtype="int32")
 
   
-    x  = relay.var("data", shape=(1, 32, 32, 3), dtype="int8")
-    args = [x]  
+    data  = relay.var("data", shape=(1, 32, 32, 3), dtype="int8")
+    data2  = relay.var("data2", shape=(1, 32, 32, 3), dtype="int8")
+    args = [data,data2]  
 
-
-    y0  = relay.nn.pad(x, -128, pad_width=[[0, 0], [1, 1], [1, 1], [0, 0]])
-    y1  = relay.nn.conv2d(y0, const0, padding=[0, 0, 0, 0], channels=16, kernel_size=[3, 3], data_layout="NHWC", kernel_layout="HWIO", out_dtype="int32")
-    y2  = relay.subtract(y1, const1)
-    y3  = relay.nn.bias_add(y2, const2, axis=3)
-    y4  = relay.cast(y3, dtype="int32")
-    y6  = relay.add(-128, y4)
+# LHS
+    y0l  = relay.nn.pad(data, pad_width=[[0, 0], [1, 1], [1, 1], [0, 0]], pad_value=-128)
+    y1l  = relay.nn.conv2d(y0l, const0, padding=[0, 0, 0, 0], channels=16, kernel_size=[3, 3], data_layout="NHWC", kernel_layout="HWIO", out_dtype="int32")
+    y2l  = relay.subtract(y1l, const1)
+    y3l  = relay.nn.bias_add(y2l, const2, axis=3)
+    y4l  = relay.cast(y3l, dtype="int32")
+# RHS
+    x0 = relay.abs(data2)
+    y0r  = relay.nn.pad(x0, pad_width=[[0, 0], [1, 1], [1, 1], [0, 0]], pad_value=-128)
+    y1r  = relay.nn.conv2d(y0r, const0, padding=[0, 0, 0, 0], channels=16, kernel_size=[3, 3], data_layout="NHWC", kernel_layout="HWIO", out_dtype="int32")
+    y2r  = relay.subtract(y1r, const1)
+    y3r  = relay.nn.bias_add(y2r, const2, axis=3)
+    y4r  = relay.cast(y3r, dtype="int32")
+# FORK
+    y6  = relay.add(y4l, y4r)
     y7  = relay.clip(y6, a_min=-128, a_max=127)
     y8  = relay.cast(y7, dtype="int8")
     y9  = relay.clip(y8, a_min=-128, a_max=127)
     y10 = relay.cast(y9, dtype="int32")
-    y11 = relay.subtract(y10, const6)
-    y12 = relay.fixed_point_multiply(y11, multiplier=1660533717, shift=0)
-    y13 = relay.nn.pad(y9, -128, pad_width=[[0, 0], [1, 1], [1, 1], [0, 0]])
-    y14 = relay.nn.conv2d(y13, const7, padding=[0, 0, 0, 0], channels=16, kernel_size=[3, 3], data_layout="NHWC", kernel_layout="HWIO", out_dtype="int32")
-    y15 = relay.subtract(y14, const8)
-    y16 = relay.nn.bias_add(y15, const9, axis=3)
-    y17 = relay.cast(y16, dtype="int32")
-    y19 = relay.add(-128 , y17)
-    y20 = relay.clip(y19, a_min=-128, a_max=127)
-    y21 = relay.cast(y20, dtype="int8")
-    y22 = relay.clip(y21, a_min=-128, a_max=127)
-    y23 = relay.nn.pad(y22, -128, pad_width=[[0, 0], [1, 1], [1, 1], [0, 0]])
-    y24 = relay.nn.conv2d(y23, const13, padding=[0, 0, 0, 0], channels=16, kernel_size=[3, 3], data_layout="NHWC", kernel_layout="HWIO", out_dtype="int32")
-    y25 = relay.subtract(y24, const14)
-    y26 = relay.nn.bias_add(y25, const15, axis=3)
-    y27 = relay.cast(y26, dtype="int32")
-    y29 = relay.add(4 , y27)
-    y30 = relay.clip(y29, a_min=-128, a_max=127)
-    y31 = relay.cast(y30, dtype="int8")
-    y32 = relay.cast(y31, dtype="int32")
-    y33 = relay.subtract(y32, const19)
-    y34 = relay.fixed_point_multiply(y33, multiplier=1098017566, shift=2)
-    y35 = relay.add(-128 , y12)
-    y36 = relay.add(-128 , y34)
-    y = relay.add(y35, y36)
-    return relay.Function(args, y)
+    #y11 = relay.subtract(y10, const1)
+    # y12 = relay.fixed_point_multiply(y11, multiplier=1660533717, shift=0)
+    # y13 = relay.nn.pad(y9, pad_width=[[0, 0], [1, 1], [1, 1], [0, 0]], pad_value=-128)
+    # y14 = relay.nn.conv2d(y13, const7, padding=[0, 0, 0, 0], channels=16, kernel_size=[3, 3], data_layout="NHWC", kernel_layout="HWIO", out_dtype="int32")
+    # y15 = relay.subtract(y14, const8)
+    # y16 = relay.nn.bias_add(y15, const9, axis=3)
+    # y17 = relay.cast(y16, dtype="int32")
+    # y19 = relay.add(relay.const(-128, "int32") , y17)
+    # y20 = relay.clip(y19, a_min=-128, a_max=127)
+    # y21 = relay.cast(y20, dtype="int8")
+    # y22 = relay.clip(y21, a_min=-128, a_max=127)
+    # y23 = relay.nn.pad(y22, pad_width=[[0, 0], [1, 1], [1, 1], [0, 0]], pad_value=-128)
+    # y24 = relay.nn.conv2d(y23, const13, padding=[0, 0, 0, 0], channels=16, kernel_size=[3, 3], data_layout="NHWC", kernel_layout="HWIO", out_dtype="int32")
+    # y25 = relay.subtract(y24, const14)
+    # y26 = relay.nn.bias_add(y25, const15, axis=3)
+    # y27 = relay.cast(y26, dtype="int32")
+    # y29 = relay.add(relay.const(4, "int32") , y27)
+    # y30 = relay.clip(y29, a_min=-128, a_max=127)
+    # y31 = relay.cast(y30, dtype="int8")
+    # y32 = relay.cast(y31, dtype="int32")
+    # y33 = relay.subtract(y32, const19)
+    # y34 = relay.fixed_point_multiply(y33, multiplier=1098017566, shift=2)
+    # y35 = relay.add(relay.const(-128, "int32") , y12)
+    # y36 = relay.add(relay.const(-128, "int32") , y34)
+    # y = relay.add(y35, y36)
+    return relay.Function(args, y10)
 
 
 
@@ -241,7 +250,9 @@ mod = relay.qnn.transform.CanonicalizeOps()(mod)
 #mod = relay.transform.Extend2DConv()(mod)
 #required to check folded constant
 #mod = relay.transform.FoldConstant()(mod)
-mod = inferType(mod)
+mod = relay.transform.InferType()(mod)
+mod = relay.transform.SimplifyExpr()(mod)
+mod = relay.transform.InferType()(mod)
 
 print("Print relay modulse:")
 print(mod)
@@ -252,10 +263,10 @@ relax_mod = relay_translator.from_relay(
     mod["main"], 
     target="llvm",
     pass_config={
-        "relay.backend.use_meta_schedule": True,
-        "relay.FuseOps.max_depth": 1,  # Disable relay fusion
+        "relay.backend.use_meta_schedule": False,
+        "relay.FuseOps.max_depth": 3,  # Disable relay fusion
     })
-# print(relax_mod)
+print(relax_mod)
 
 print("dfs")
 
