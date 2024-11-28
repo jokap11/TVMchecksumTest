@@ -21,8 +21,8 @@ import tvm
 import tvm.relay as relay
 from tvm.contrib import graph_executor
 from tvm.topi.testing import strided_slice_python, conv2d_nchw_python
-from tvm.relax.testing import relay_translator
-import tvm.relax as relax
+# from tvm.relax.testing import relay_translator
+# import tvm.relax as relax
 
 
 def easy_2conv_example():
@@ -61,7 +61,7 @@ def complex_conv_in_deeper_tree_structure():
         y8 = relay.sum(y5, axis=[0, 1, 2, 3])
         y9 = relay.sum(y7, axis=[0, 1, 2, 3])
         y10 = relay.not_equal(y8, y9)
-        y = relay.Tuple([y6, y10])
+        y = relay.Tuple([y10, y6])
         return relay.Function(args, y)
 
 
@@ -178,6 +178,17 @@ def strided_slice_example():
     conv = relay.strided_slice(x, begin=[ 1, 1], end=[ 7, 7], strides=[1, 1], axes=[1,0],slice_mode="end")
     return relay.Function([x], conv)
 
+def concurrent_2conv_example():
+    c_data = np.empty(shape=(1, 64, 3, 3)).astype("int8")
+    w1 = relay.const(c_data,dtype="int8")
+    c_data = np.empty(shape=(1, 64, 3, 3)).astype("int8")
+    w2 = relay.const(c_data,dtype="int8")
+    x = relay.var("x", shape=(1, 64, 56, 56), dtype="int8")
+    conv = relay.nn.conv2d(x, w1, out_dtype="int32")
+    conv2 = relay.nn.conv2d(x, w2, out_dtype="int32")
+    y = relay.add(conv, conv2)
+    return relay.Function([x], y)
+
 
 def evaluate():
     #c_data = np.zeros(shape=(1, 64, 3, 3)).astype("int8")
@@ -234,11 +245,15 @@ def evaluate():
 
 
 
+
+
 #result = evaluate()
 #print("New Tensor:")
 #print(result)
 
 f = fork_structure()
+f = complex_conv_in_deeper_tree_structure()
+
 mod = tvm.IRModule.from_expr(f)
 
 
@@ -254,28 +269,13 @@ mod = relay.transform.InferType()(mod)
 mod = relay.transform.SimplifyExpr()(mod)
 mod = relay.transform.InferType()(mod)
 
-print("Print relay modulse:")
+print("Print relay module befor opt:")
 print(mod)
 
-print("Now transformed relax module:")
+mod = relay.transform.MinimizeRAMWithTupleOrder()(mod)
+print(mod)
 
-relax_mod = relay_translator.from_relay(
-    mod["main"], 
-    target="llvm",
-    pass_config={
-        "relay.backend.use_meta_schedule": False,
-        "relay.FuseOps.max_depth": 3,  # Disable relay fusion
-    })
-print(relax_mod)
+mod = relay.transform.InferType()(mod)
+print(mod)
 
-print("dfs")
-
-relax_dfs= relax.transform.TopologicalSort("depth-first", "from-inputs")(relax_mod)
-
-print(relax_dfs)
-
-print("bfs")
-
-relax_bfs= relax.transform.TopologicalSort("breadth-first", "from-inputs")(relax_mod)
-
-print(relax_bfs)
+print("Print relay module afterwards:")
